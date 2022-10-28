@@ -91,8 +91,7 @@ echo 3
 }
 
 func TestCodeBlock_Name(t *testing.T) {
-	data := []byte(`
-This is a basic snippet with a shell command:
+	data := []byte(`This is a basic snippet with a shell command:
 
 ` + "```" + `sh
 $ echo "Hello, runme!"
@@ -107,6 +106,46 @@ $ echo "Hello, runme!"
 	blocks := source.Parse().CodeBlocks()
 	assert.Equal(t, "echo-hello", blocks[0].Name())
 	assert.Equal(t, "myname", blocks[1].Name())
+}
+
+func TestMarkdownBlock_Content(t *testing.T) {
+	data := []byte(`This is a basic snippet with a shell command:
+
+` + "```" + `sh
+$ echo "Hello, runme!"
+` + "```" + `
+
+It can have an annotation with a name:
+
+` + "```" + `sh {name=myname first= second=2}
+$ echo "Hello, runme!"
+` + "```")
+	source := NewSource(data)
+	blocks := source.Parse().Blocks()
+	assert.Equal(t, "This is a basic snippet with a shell command:", blocks[0].(*MarkdownBlock).Content())
+	assert.Equal(t, "$ echo \"Hello, runme!\"\n", blocks[1].(*CodeBlock).Content())
+	assert.Equal(t, "It can have an annotation with a name:", blocks[2].(*MarkdownBlock).Content())
+	assert.Equal(t, "$ echo \"Hello, runme!\"\n", blocks[3].(*CodeBlock).Content())
+}
+
+func TestMarkdownBlock_Content2(t *testing.T) {
+	data := []byte(`Test involving nested blocks:
+
+> foo
+> bar
+> baz
+
+1. Item
+
+    ` + "```" + `bash
+    linkerd install | kubectl apply -f -
+    ` + "```" + `
+`)
+	source := NewSource(data)
+	blocks := source.Parse().Blocks()
+	assert.Equal(t, "Test involving nested blocks:", blocks[0].(*MarkdownBlock).Content())
+	assert.Equal(t, "> foo\n> bar\n> baz", blocks[1].(*MarkdownBlock).Content())
+	assert.Equal(t, "1. Item", blocks[2].(*MarkdownBlock).Content())
 }
 
 func TestBlock_MarshalJSON(t *testing.T) {

@@ -3,12 +3,21 @@ package document
 import (
 	"bytes"
 	"encoding/json"
-	"io"
 	"regexp"
 	"strings"
 
 	"github.com/yuin/goldmark/ast"
 )
+
+const (
+	KindRaw = iota + 1
+	KindCode
+)
+
+type Block2 struct {
+	Kind int         `json:"kind"`
+	Data interface{} `json:"data"`
+}
 
 type CodeBlock struct {
 	inner        *ast.FencedCodeBlock
@@ -224,30 +233,60 @@ func (b *CodeBlock) MarshalJSON() ([]byte, error) {
 }
 
 type MarkdownBlock struct {
-	inner  ast.Node
-	source []byte
+	inner    ast.Node
+	previous ast.Node
+	source   []byte
 
 	content string
 }
 
-func writeLines(w io.Writer, n ast.Node, source []byte) {
-	if n.Type() == ast.TypeBlock {
-		for i := 0; i < n.Lines().Len(); i++ {
-			line := n.Lines().At(i)
-			_, _ = w.Write(line.Value(source))
-		}
+func findFirstBlockChild(node ast.Node) ast.Node {
+	if node == nil {
+		return nil
 	}
 
-	for c := n.FirstChild(); c != nil; c = c.NextSibling() {
-		writeLines(w, c, source)
+	if !node.HasChildren() || node.FirstChild().Type() != ast.TypeBlock {
+		return node
 	}
+
+	node = node.FirstChild()
+	for node.FirstChild() != nil && node.FirstChild().Type() == ast.TypeBlock {
+		node = node.FirstChild()
+	}
+	return node
+}
+
+func findLastBlockChild(node ast.Node) ast.Node {
+	if node == nil {
+		return nil
+	}
+
+	if !node.HasChildren() || node.LastChild().Type() != ast.TypeBlock {
+		return node
+	}
+
+	node = node.LastChild()
+	for node.LastChild() != nil && node.LastChild().Type() == ast.TypeBlock {
+		node = node.LastChild()
+	}
+	return node
 }
 
 func (b *MarkdownBlock) Content() string {
 	if b.content == "" {
-		var content strings.Builder
-		writeLines(&content, b.inner, b.source)
-		b.content = content.String()
+		startNode := findFirstBlockChild(b.inner)
+		lastNode := findLastBlockChild(b.inner)
+
+		start := startNode.Lines().At(0).Start - startNode.Lines().At(0).Padding
+
+		switch b.inner.Kind() {
+		case ast.KindBlockquote:
+			start -= 2
+		}
+
+		end := lastNode.Lines().At(lastNode.Lines().Len() - 1).Stop
+
+		b.content = string(b.source[start:end])
 	}
 	return b.content
 }
