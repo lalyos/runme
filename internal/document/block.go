@@ -233,9 +233,8 @@ func (b *CodeBlock) MarshalJSON() ([]byte, error) {
 }
 
 type MarkdownBlock struct {
-	inner    ast.Node
-	previous ast.Node
-	source   []byte
+	inner  ast.Node
+	source []byte
 
 	content string
 }

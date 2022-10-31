@@ -24,25 +24,25 @@ func (s *ParsedSource) Source() []byte {
 	return s.data
 }
 
-func (s *ParsedSource) hasChildOfKind(node ast.Node, kind ast.NodeKind) (bool, ast.Node) {
+func (s *ParsedSource) hasChildOfKind(node ast.Node, kind ast.NodeKind) (ast.Node, bool) {
 	if node.Type() != ast.TypeBlock {
-		return false, nil
+		return nil, false
 	}
 
 	if node.Kind() == kind {
-		return true, node
+		return node, true
 	}
 
 	for c := node.FirstChild(); c != nil; c = c.NextSibling() {
-		if ok, node := s.hasChildOfKind(c, kind); ok {
-			return ok, node
+		if node, ok := s.hasChildOfKind(c, kind); ok {
+			return node, ok
 		}
 	}
-	return false, nil
+	return nil, false
 }
 
-func (s *ParsedSource) findBlocks(nameRes *nameResolver, node ast.Node) (result Blocks) {
-	for c := node.FirstChild(); c != nil; c = c.NextSibling() {
+func (s *ParsedSource) findBlocks(nameRes *nameResolver, docNode ast.Node) (result Blocks) {
+	for c := docNode.FirstChild(); c != nil; c = c.NextSibling() {
 		switch c.Kind() {
 		case ast.KindFencedCodeBlock:
 			result = append(result, &CodeBlock{
@@ -51,14 +51,50 @@ func (s *ParsedSource) findBlocks(nameRes *nameResolver, node ast.Node) (result 
 				nameResolver: nameRes,
 			})
 		default:
-			if ok, _ := s.hasChildOfKind(c, ast.KindFencedCodeBlock); ok {
-				fmt.Printf("found a child fenced code block\n")
+			if innerCodeBlock, ok := s.hasChildOfKind(c, ast.KindFencedCodeBlock); ok {
+				fmt.Printf("found inner fenced code block\n")
+
+				switch c.Kind() {
+				case ast.KindList:
+					listItem := innerCodeBlock.Parent()
+
+					// move the code block into the root node
+					listItem.RemoveChild(listItem, innerCodeBlock)
+					docNode.InsertAfter(docNode, c, innerCodeBlock)
+
+					// split the list if there are any list items
+					// after listItem
+					if listItem.NextSibling() != nil {
+						newList := ast.NewList(c.(*ast.List).Marker)
+						for item := listItem.NextSibling(); item != nil; item = item.NextSibling() {
+							c.RemoveChild(c, item)
+							newList.AppendChild(newList, item)
+						}
+						docNode.InsertAfter(docNode, innerCodeBlock, newList)
+					}
+				case ast.KindBlockquote:
+					nextParagraph := innerCodeBlock.NextSibling()
+
+					// move the code block into the root node
+					c.RemoveChild(c, innerCodeBlock)
+					docNode.InsertAfter(docNode, c, innerCodeBlock)
+
+					// move all paragraphs after the code block
+					// into the new block quote
+					if nextParagraph != nil {
+						newBlockQuote := ast.NewBlockquote()
+						for item := nextParagraph; item != nil; item = item.NextSibling() {
+							c.RemoveChild(c, item)
+							newBlockQuote.AppendChild(newBlockQuote, item)
+						}
+						docNode.InsertAfter(docNode, innerCodeBlock, newBlockQuote)
+					}
+				}
 			}
 
 			result = append(result, &MarkdownBlock{
-				source:   s.data,
-				inner:    c,
-				previous: c.PreviousSibling(),
+				source: s.data,
+				inner:  c,
 			})
 		}
 	}
