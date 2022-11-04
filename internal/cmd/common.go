@@ -26,7 +26,8 @@ func getCodeBlocks() (document.CodeBlocks, error) {
 			filtered = append(filtered, b)
 		}
 	}
-	return filtered, nil
+	// return all block not filtered!
+	return blocks, nil
 }
 
 func lookupCodeBlock(blocks document.CodeBlocks, name string) (*document.CodeBlock, error) {
