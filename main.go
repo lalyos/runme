@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"fmt"
 	"os"
 
 	"github.com/itchyny/gojq/cli"
@@ -34,7 +35,10 @@ func myFzf(args []string) {
 func myRunme(args []string) {
 	restoreArgs := fakeArgs("runme", args)
 	defer restoreArgs()
-	cmd.Root().Execute()
+
+	root := cmd.Root()
+	root.Version = fmt.Sprintf("stateful %s (%s) on %s", BuildVersion, Commit, BuildDate)
+	root.Execute()
 }
 
 //go:embed bash/*.bash
