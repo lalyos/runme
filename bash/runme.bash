@@ -15,12 +15,12 @@ init() {
 
 list() {
   declare desc="lists available block in markdown"
-  _runme list --filename ${RUNME_FILE}
+  runme list --filename ${RUNME_FILE}
 }
 
 print() {
   declare desc="lists available block in markdown"
-  _runme print --filename ${RUNME_FILE} "$@"
+  runme print --filename ${RUNME_FILE} "$@"
 }
 
 choose() {
@@ -32,12 +32,15 @@ choose() {
 
 irun() {
   declare desc="interactively choose and run a block"
-  block=$(_runme json --filename ${RUNME_FILE} \
-    | _jq -r '.document[]|select(.name)|.name' \
-    | _fzf --height=50% --layout=reverse --preview="runme print --filename ${RUNME_FILE} {}" \
+
+  # fzf runs in a subprocess, needs the faked fzf command/function
+  export -f runme
+  block=$(runme json --filename ${RUNME_FILE} \
+    | jq -r '.document[]|select(.name)|.name' \
+    | fzf --height=50% --layout=reverse --preview="runme print --filename ${RUNME_FILE} {}" \
     | xargs
   )
-  _runme run --filename ${RUNME_FILE} ${block} "$@"
+  runme run --filename ${RUNME_FILE} ${block} "$@"
 }
 main() {
     [[ "$TRACE" ]] && set -x
@@ -53,6 +56,6 @@ main() {
 
       cmd-ns "" "$@"
 
-      #  _runme "$@"
+      # runme "$@"
     fi
 }

@@ -61,9 +61,9 @@ func main() {
 		loader = nil
 	}
 	basher.Application(map[string]func([]string){
-		"_jq":    myJq,
-		"_fzf":   myFzf,
-		"_runme": myRunme,
+		"jq":    myJq,
+		"fzf":   myFzf,
+		"runme": myRunme,
 	}, []string{
 		"bash/runme.bash",
 		"bash/fn.bash",
