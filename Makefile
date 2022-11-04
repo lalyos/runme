@@ -12,7 +12,7 @@ LDFLAGS := -s -w \
 
 .PHONY: build
 build:
-	go build -o runme -ldflags="$(LDFLAGS)" main.go
+	go build -o runmi -ldflags="$(LDFLAGS)" main.go
 
 .PHONY: wasm
 wasm: WASM_OUTPUT ?= examples/web
