@@ -42,6 +42,15 @@ irun() {
   )
   runme run --filename ${RUNME_FILE} ${block} "$@"
 }
+shell() {
+  declare desc="starts an intercative basher shell"
+
+  # runs help in debug just to produce BASHENV file
+  DEBUG=1 $SELF_EXECUTABLE ::: help >& /dev/null
+  # uses BASHENV for interctive session
+  bash --rcfile <( echo 'PS1="BASHER> "'; cat $(ls -1rt /tmp/bashenv.*|tail -1))
+}
+
 main() {
     [[ "$TRACE" ]] && set -x
 
@@ -53,6 +62,7 @@ main() {
       cmd-export choose
       cmd-export list
       cmd-export print
+      cmd-export shell
 
       cmd-ns "" "$@"
 
