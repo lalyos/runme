@@ -27,6 +27,8 @@ gha-creds-*.json
 # Binary build with make
 rdme
 runme
+runmi
+.rm.md
 
 # Logs
 *.log
