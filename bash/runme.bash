@@ -23,10 +23,13 @@ print() {
   runme print --filename ${RUNME_FILE} "$@"
 }
 
-choose() {
+choose-exercise() {
   declare desc="choose an exercise"
   
-  mdfile=$(cd ${RUNME_DIR}; ls -1 *.md|fzf --height=50% --layout=reverse )
+  mdfile=$(
+    cd ${RUNME_DIR}; ls -1 *.md \
+    | fzf --prompt="Choose an exercise:" --height=50% --layout=reverse
+  )
   cp ${RUNME_DIR}/${mdfile} ${RUNME_FILE}
 }
 
@@ -59,7 +62,7 @@ main() {
       irun
     else
       cmd-export init
-      cmd-export choose
+      cmd-export choose-exercise exercise
       cmd-export list
       cmd-export print
       cmd-export shell
