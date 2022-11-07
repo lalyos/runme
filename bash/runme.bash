@@ -1,6 +1,8 @@
 
 : ${RUNME_DIR:=$HOME/.runme}
 : ${RUNME_FILE:=.rm.md}
+: ${RUNME_REPO_PREFIX:=https://gist.github.com/lalyos/}
+
 debug() {
   ((DEBUG)) && echo "[DEBUG] $@" 1>&2
 }
@@ -10,10 +12,13 @@ init() {
   declare gitrepo=${1:-$RUNME_REPO}
 
   : ${gitrepo:? required}
+  # accept naked gistId
+  [[ $gitrepo =~ "github" ]] || gitrepo=${RUNME_REPO_PREFIX%/}/${gitrepo}
+
   rm -rf ${RUNME_DIR} 2>/dev/null || true 
-  # git clone ${RUNME_REPO} ${RUNME_DIR}
-  git clone ${gitrepo} ${RUNME_DIR}
-  choose
+  # git clone ${gitrepo} ${RUNME_DIR}
+  git clone ${gitrepo} ${RUNME_DIR} 2>/dev/null
+  choose-exercise
 }
 
 list() {
