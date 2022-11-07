@@ -20,7 +20,8 @@ list() {
 
 print() {
   declare desc="lists available block in markdown"
-  runme print --filename ${RUNME_FILE} "$@"
+  block=$(choose-block)
+  runme print --filename ${RUNME_FILE} ${block}
 }
 
 choose-exercise() {
@@ -33,16 +34,21 @@ choose-exercise() {
   cp ${RUNME_DIR}/${mdfile} ${RUNME_FILE}
 }
 
-irun() {
-  declare desc="interactively choose and run a block"
-
+choose-block() {
   # fzf runs in a subprocess, needs the faked fzf command/function
   export -f runme
-  block=$(runme json --filename ${RUNME_FILE} \
+  runme json --filename ${RUNME_FILE} \
     | jq -r '.document[]|select(.name)|.name' \
-    | fzf --height=50% --layout=reverse --preview="runme print --filename ${RUNME_FILE} {}" \
-    | xargs
+    | fzf  \
+        --height=50% \
+        --layout=reverse \
+        --preview="runme print --filename ${RUNME_FILE} {}" 
+}
+
   )
+irun() {
+  declare desc="interactively choose and run a block"
+  block=$(choose-block)
   runme run --filename ${RUNME_FILE} ${block} "$@"
 }
 shell() {
@@ -63,6 +69,7 @@ main() {
     else
       cmd-export init
       cmd-export choose-exercise exercise
+      cmd-export irun
       cmd-export list
       cmd-export print
       cmd-export shell
