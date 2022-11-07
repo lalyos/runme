@@ -1,4 +1,4 @@
-
+  
 : ${RUNME_DIR:=$HOME/.runme}
 : ${RUNME_FILE:=.rm.md}
 : ${RUNME_REPO_PREFIX:=https://gist.github.com/lalyos/}
@@ -43,7 +43,7 @@ choose-exercise() {
 }
 
 choose-block() {
-  # fzf runs in a subprocess, needs the faked fzf command/function
+    # fzf runs in a subprocess, needs the faked fzf command/function
   export -f runme
   runme json --filename ${RUNME_FILE} \
     | jq -r '.document[]|select(.name)|.name' \
@@ -53,7 +53,33 @@ choose-block() {
         --preview="runme print --filename ${RUNME_FILE} {}" 
 }
 
-  )
+command-list() {
+  cmd=${1:-print}
+  shift
+  runme json --filename ${RUNME_FILE} \
+    | jq -r '"'${cmd}' \(.document[]|select(.name)|.name) '"$@"'"'
+}
+
+inter() {
+  export -f command-list runme
+  export RUNME_FILE
+  command=$( command-list run \
+    | fzf  \
+        --prompt="RUN> " \
+        --header 'CTRL-r (run) CTRL-p (print)  CTR-d (dry-run)  CTR-c (exit)' \
+        --bind 'ctrl-r:change-prompt(RUN> )+reload(command-list run)' \
+        --bind 'ctrl-d:change-prompt(DRY> )+reload(command-list run --dry-run)' \
+        --bind 'ctrl-p:change-prompt(PRINT> )+reload(command-list print)' \
+        --bind 'ctrl-h:change-prompt(PRINT> )+reload(command-list print)' \
+        --with-nth 2 \
+        --height=50% \
+        --layout=reverse \
+        --preview="runme print --filename ${RUNME_FILE} {2}" \
+        --preview-window 'right,40%' \
+    )
+    runme --filename ${RUNME_FILE} ${command}
+}
+
 irun() {
   declare desc="interactively choose and run a block"
   block=$(choose-block)
@@ -73,7 +99,7 @@ main() {
 
     # default command is interactive run:
     if [[ $# -eq 0 ]]; then
-      irun
+      inter
     else
       cmd-export init
       cmd-export choose-exercise exercise
@@ -81,6 +107,7 @@ main() {
       cmd-export list
       cmd-export print
       cmd-export shell
+      cmd-export inter
 
       cmd-ns "" "$@"
 
