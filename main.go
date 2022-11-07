@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/itchyny/gojq/cli"
@@ -38,7 +39,11 @@ func myRunme(args []string) {
 
 	root := cmd.Root()
 	root.Version = fmt.Sprintf("stateful %s (%s) on %s", BuildVersion, Commit, BuildDate)
-	root.Execute()
+	err := root.Execute()
+	if err != nil {
+		log.Println(err)
+	}
+
 }
 
 //go:embed bash/*.bash
