@@ -1,6 +1,9 @@
 
 : ${RUNME_DIR:=$HOME/.runme}
 : ${RUNME_FILE:=.rm.md}
+debug() {
+  ((DEBUG)) && echo "[DEBUG] $@" 1>&2
+}
 
 init() {
   declare desc="gets runme git repo"
