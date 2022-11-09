@@ -61,6 +61,7 @@ command-list() {
 }
 
 inter() {
+  declare desc="Interactive runme (default command)" 
   export -f command-list runme
   export RUNME_FILE
   command=$( command-list run \
